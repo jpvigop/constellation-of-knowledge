@@ -9,6 +9,7 @@ function App() {
   const [topic, setTopic] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [suggestions, setSuggestions] = useState([]);
   const [graphData, setGraphData] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
 
@@ -19,6 +20,7 @@ function App() {
     setTopic(searchTopic);
     setIsLoading(true);
     setError(null);
+    setSuggestions([]);
     setGraphData(null);
     setSelectedNode(null);
     
@@ -39,10 +41,21 @@ function App() {
       console.log('Graph data set in state');
     } catch (err) {
       console.error('Error in handleSearch:', err);
-      setError(err.message || 'Failed to fetch data. Please try again.');
+      
+      // Handle custom error object with suggestions
+      if (err && err.type === 'SUGGESTIONS_AVAILABLE' && err.suggestions) {
+        setError(err.message || 'No results found. Did you mean one of these?');
+        setSuggestions(err.suggestions);
+      } else {
+        setError(err.message || 'Failed to fetch data. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSuggestionClick = (suggestion) => {
+    handleSearch(suggestion);
   };
 
   const handleNodeSelect = (node) => {
@@ -72,7 +85,28 @@ function App() {
         {error && (
           <div className="error-container">
             <p>{error}</p>
-            <button onClick={() => setError(null)}>Dismiss</button>
+            
+            {suggestions.length > 0 && (
+              <div className="suggestions-container">
+                <p>Did you mean:</p>
+                <ul className="suggestions-list">
+                  {suggestions.map((suggestion, index) => (
+                    <li key={index}>
+                      <button 
+                        onClick={() => handleSuggestionClick(suggestion)}
+                        className="suggestion-button"
+                      >
+                        {suggestion}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            <button onClick={() => setError(null)} className="dismiss-button">
+              Dismiss
+            </button>
           </div>
         )}
         

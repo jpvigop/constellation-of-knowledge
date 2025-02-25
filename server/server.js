@@ -121,8 +121,59 @@ app.get('/api/constellation/:topic', async (req, res) => {
       }
     });
     
-    if (!searchResponse.data.query || !searchResponse.data.query.search) {
-      return res.status(404).json({ error: 'No results found for this topic' });
+    if (!searchResponse.data.query || !searchResponse.data.query.search || searchResponse.data.query.search.length === 0) {
+      console.log(`[Server] No results found for topic: ${topic}. Trying alternative search.`);
+      
+      // Try a more permissive search with wildcards if the term is long enough
+      if (topic.length >= 3) {
+        const fuzzySearchResponse = await wikiApiClient.get(WIKI_API_ENDPOINT, {
+          params: {
+            action: 'query',
+            list: 'search',
+            srsearch: `${topic}*`, // Add wildcard for fuzzy matching
+            format: 'json',
+            srlimit: 10,
+            origin: '*',
+            utf8: 1
+          }
+        });
+        
+        if (fuzzySearchResponse.data.query && 
+            fuzzySearchResponse.data.query.search && 
+            fuzzySearchResponse.data.query.search.length > 0) {
+          console.log(`[Server] Found ${fuzzySearchResponse.data.query.search.length} results using fuzzy search`);
+          searchResponse.data = fuzzySearchResponse.data;
+        } else {
+          // If still no results, try searching for the closest matching topic
+          console.log('[Server] Trying opensearch for suggestions');
+          const suggestResponse = await wikiApiClient.get(WIKI_API_ENDPOINT, {
+            params: {
+              action: 'opensearch',
+              search: topic,
+              limit: 5,
+              format: 'json',
+              origin: '*'
+            }
+          });
+          
+          if (suggestResponse.data && 
+              Array.isArray(suggestResponse.data[1]) && 
+              suggestResponse.data[1].length > 0) {
+            // Return suggestions to the client
+            return res.status(404).json({ 
+              error: 'No results found for this topic',
+              suggestions: suggestResponse.data[1]
+            });
+          }
+          
+          return res.status(404).json({ error: 'No results found for this topic' });
+        }
+      } else {
+        return res.status(404).json({ 
+          error: 'Search term is too short',
+          message: 'Please try a longer, more specific search term'
+        });
+      }
     }
     
     const searchResults = searchResponse.data.query.search;

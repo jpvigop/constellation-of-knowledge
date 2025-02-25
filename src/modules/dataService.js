@@ -4,12 +4,13 @@ import axios from 'axios';
  * Fetches data about a topic from Wikipedia via our backend API
  * @param {string} topic - The topic to search for
  * @returns {Promise<Object>} - Promise resolving to a graph data structure
+ * @throws {Error} - Various error types with descriptive messages
  */
 export const fetchTopicData = async (topic) => {
   try {
     console.log('Fetching data for topic:', topic);
     
-    // Use the new consolidated endpoint that handles all processing on the server
+    // Use the consolidated endpoint that handles all processing on the server
     console.log('Making constellation API request...');
     const response = await axios.get(`/api/constellation/${encodeURIComponent(topic)}`);
     console.log('Constellation API response received');
@@ -27,15 +28,39 @@ export const fetchTopicData = async (topic) => {
   } catch (error) {
     console.error('Error in fetchTopicData:', error);
     
-    // Fallback to the original two-step approach if the consolidated endpoint fails
-    if (error.response && error.response.status === 404) {
-      throw new Error('No results found for this topic');
+    // Handle various error scenarios with appropriate user messages
+    if (error.response) {
+      // Server responded with an error status
+      if (error.response.status === 404) {
+        // Check if we have suggestions
+        if (error.response.data && error.response.data.suggestions) {
+          throw {
+            message: 'No results found for this topic',
+            suggestions: error.response.data.suggestions,
+            type: 'SUGGESTIONS_AVAILABLE'
+          };
+        }
+        
+        // Check if the term was too short
+        if (error.response.data && error.response.data.message === 'Please try a longer, more specific search term') {
+          throw new Error('Search term too short. Please enter at least 3 characters.');
+        }
+        
+        throw new Error('No results found for this topic. Try a different search term.');
+      }
+      
+      // Other response error with message from server
+      if (error.response.data && error.response.data.message) {
+        throw new Error(error.response.data.message);
+      }
     }
     
-    if (axios.isAxiosError(error) && error.response && error.response.data && error.response.data.message) {
-      throw new Error(error.response.data.message);
+    // Network errors or other issues
+    if (error.request) {
+      throw new Error('Network error. Please check your connection and try again.');
     }
     
+    // For regular error objects or custom errors we created above
     throw error;
   }
 };
