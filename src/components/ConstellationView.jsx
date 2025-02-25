@@ -23,16 +23,19 @@ const ConstellationView = ({ data, onNodeSelect }) => {
     
     // Ensure all links have proper source and target objects (not just IDs)
     graphData.links.forEach(link => {
-      if (typeof link.source === 'string' || typeof link.source === 'number') {
-        const sourceNode = graphData.nodes.find(n => n.id === link.source.toString());
+      // Convert source to object if it's an ID
+      if (typeof link.source !== 'object' || link.source === null) {
+        const sourceNode = graphData.nodes.find(n => String(n.id) === String(link.source));
         if (sourceNode) {
           link.source = sourceNode;
         } else {
           console.warn(`Source node with ID ${link.source} not found`);
         }
       }
-      if (typeof link.target === 'string' || typeof link.target === 'number') {
-        const targetNode = graphData.nodes.find(n => n.id === link.target.toString());
+      
+      // Convert target to object if it's an ID
+      if (typeof link.target !== 'object' || link.target === null) {
+        const targetNode = graphData.nodes.find(n => String(n.id) === String(link.target));
         if (targetNode) {
           link.target = targetNode;
         } else {

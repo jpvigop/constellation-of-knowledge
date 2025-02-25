@@ -2,13 +2,35 @@ const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
 const path = require('path');
+const net = require('net');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+let PORT = process.env.PORT || 5002; // Changed to 5002 as a starting point
+
+// Function to find an available port
+function findAvailablePort(startPort) {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.on('error', err => {
+      if (err.code === 'EADDRINUSE') {
+        // Port is in use, try the next port
+        resolve(findAvailablePort(startPort + 1));
+      } else {
+        reject(err);
+      }
+    });
+    
+    server.listen(startPort, () => {
+      server.close(() => {
+        resolve(startPort);
+      });
+    });
+  });
+}
 
 // Middleware
 app.use(cors({
-  origin: 'http://localhost:3000', // Allow frontend to access the API
+  origin: ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:3001'], // Added 3001
   credentials: true
 }));
 app.use(express.json());
@@ -278,8 +300,8 @@ function processWikiData(searchResults, pageDetails) {
         if (targetNode) {
           // Create a link from this page to the target
           graph.links.push({
-            source: pageId,
-            target: targetNode.id,
+            source: pageId.toString(),
+            target: targetNode.id.toString(),
             value: 1, // Default strength
           });
         }
@@ -296,8 +318,8 @@ function processWikiData(searchResults, pageDetails) {
       
       sortedNodes.slice(1).forEach(node => {
         graph.links.push({
-          source: centralNode.id,
-          target: node.id,
+          source: centralNode.id.toString(),
+          target: node.id.toString(),
           value: 1
         });
       });
@@ -330,7 +352,7 @@ if (process.env.NODE_ENV !== 'production') {
     // Otherwise, respond with a message to use the Vite dev server
     res.send(`
       <h1>Development Server</h1>
-      <p>This is the API server. For the frontend, please use the Vite dev server at <a href="http://localhost:3000">http://localhost:3000</a></p>
+      <p>This is the API server. For the frontend, please use the Vite dev server at <a href="http://localhost:3001">http://localhost:3001</a></p>
     `);
   });
 }
@@ -344,6 +366,13 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+// Start the server on an available port
+findAvailablePort(PORT).then(availablePort => {
+  PORT = availablePort;
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}).catch(err => {
+  console.error('Failed to find an available port:', err);
+  process.exit(1);
 }); 
