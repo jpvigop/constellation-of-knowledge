@@ -1,0 +1,131 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.app-header {
+  padding: 1rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--secondary-color);
+  border-bottom: 1px solid var(--border-color);
+  z-index: 10;
+}
+
+.app-header h1 {
+  margin-bottom: 1rem;
+  text-align: center;
+  color: var(--accent-color);
+  text-shadow: 0 0 10px rgba(249, 215, 28, 0.4);
+}
+
+.app-content {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.loading-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--primary-color);
+  z-index: 5;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  border-top-color: var(--accent-color);
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+.error-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 2rem;
+  background-color: var(--secondary-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px var(--shadow-color);
+  text-align: center;
+  max-width: 90%;
+  z-index: 5;
+}
+
+.error-container p {
+  margin-bottom: 1rem;
+  color: #ff6b6b;
+}
+
+.error-container button {
+  padding: 0.5rem 1rem;
+  background-color: var(--accent-color);
+  color: var(--primary-color);
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.intro-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: 600px;
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-color);
+}
+
+.intro-container h2 {
+  margin-bottom: 1rem;
+  color: var(--accent-color);
+}
+
+.intro-container p {
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.hint {
+  font-style: italic;
+  opacity: 0.7;
+  font-size: 0.9rem !important;
+}
+
+/* Media Queries */
+@media (min-width: 768px) {
+  .app-header {
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 1rem 2rem;
+  }
+  
+  .app-header h1 {
+    margin-bottom: 0;
+  }
+}
+
+@media (max-width: 767px) {
+  .app-header {
+    padding: 1rem;
+  }
+  
+  .intro-container {
+    padding: 1rem;
+  }
+} 
