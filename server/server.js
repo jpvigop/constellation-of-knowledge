@@ -7,7 +7,7 @@ const net = require('net');
 const app = express();
 let PORT = process.env.PORT || 5002; // Changed to 5002 as a starting point
 
-// Function to find an available port
+// Function to find an available port - only used in local development
 function findAvailablePort(startPort) {
   return new Promise((resolve, reject) => {
     const server = net.createServer();
@@ -30,7 +30,12 @@ function findAvailablePort(startPort) {
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:3001'], // Added 3001
+  origin: process.env.VERCEL_URL 
+    ? [
+        `https://${process.env.VERCEL_URL}`, 
+        'https://constellation-of-knowledge.vercel.app'
+      ] 
+    : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:3001'],
   credentials: true
 }));
 app.use(express.json());
@@ -359,20 +364,28 @@ if (process.env.NODE_ENV !== 'production') {
 
 // Serve static assets in production
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../dist')));
-  
-  app.get('*', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '../dist', 'index.html'));
+  // For Vercel deployment, the static files are served by Vercel itself
+  if (!process.env.VERCEL) {
+    app.use(express.static(path.join(__dirname, '../dist')));
+    
+    app.get('*', (req, res) => {
+      res.sendFile(path.resolve(__dirname, '../dist', 'index.html'));
+    });
+  }
+}
+
+// Start server for local development only - Vercel will handle this differently
+if (!process.env.VERCEL) {
+  findAvailablePort(PORT).then(availablePort => {
+    PORT = availablePort;
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  }).catch(err => {
+    console.error('Failed to find an available port:', err);
+    process.exit(1);
   });
 }
 
-// Start the server on an available port
-findAvailablePort(PORT).then(availablePort => {
-  PORT = availablePort;
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
-}).catch(err => {
-  console.error('Failed to find an available port:', err);
-  process.exit(1);
-}); 
+// Export for Vercel serverless function
+module.exports = app; 

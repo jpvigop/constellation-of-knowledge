@@ -9,6 +9,7 @@
     "client": "vite",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "build": "vite build",
+    "vercel-build": "vite build",
     "preview": "vite preview"
   },
   "keywords": [

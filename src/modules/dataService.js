@@ -1,5 +1,8 @@
 import axios from 'axios';
 
+// Get API base URL from environment variables
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+
 /**
  * Fetches data about a topic from Wikipedia via our backend API
  * @param {string} topic - The topic to search for
@@ -12,7 +15,7 @@ export const fetchTopicData = async (topic) => {
     
     // Use the consolidated endpoint that handles all processing on the server
     console.log('Making constellation API request...');
-    const response = await axios.get(`/api/constellation/${encodeURIComponent(topic)}`);
+    const response = await axios.get(`${API_BASE_URL}/constellation/${encodeURIComponent(topic)}`);
     console.log('Constellation API response received');
     
     // The response is already processed into a graph structure
